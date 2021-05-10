@@ -1,0 +1,6 @@
+[build-system]
+requires = ["skyhook"]
+build-backend = "skyhook.publish"
+
+[tool.skyhook]
+specification = noughts-and-crosses.yaml

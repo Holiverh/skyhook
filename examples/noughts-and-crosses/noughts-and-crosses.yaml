@@ -1,0 +1,75 @@
+service:
+  name: "noughts-and-crosses"
+  version: "0.1.0"
+  description: For playing noughts and crosses with Lambdas.
+
+
+functions:
+  - name: play
+    description: |
+      Play a nought or cross on the board.
+
+      Current `board` state is provided as nine marks which may already
+      be a nought, a cross or not yet placed -- a null. Must return an
+      index into the board where to place the given `mark`. Marks can only
+      be placed into the unoccupied cells of the board otherwise the game
+      is forfeit.
+    arguments:
+      - name: mark
+        description: Which marker is to be played.
+        schema:
+          anyOf:
+            - $ref: "#/types/nought"
+            - $ref: "#/types/cross"
+      - name: board
+        description: Current state of the game board.
+        schema:
+          $ref: "#/types/board"
+    returns:
+      description: Index into board of where to place marker.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 8
+
+
+types:
+  - name: nought
+    description: Literal nought marker.
+    schema:
+      const: "0"
+
+  - name: cross
+    description: Literal cross marker.
+    schema:
+      const: "X"
+
+  - name: cell
+    description: |
+      Cell in a noughts and crosses board.
+
+      With a null representing an empty cell.
+    schema:
+      anyOf:
+        - $ref: "#/types/nought"
+        - $ref: "#/types/cross"
+        - type: "null"
+
+  - name: board
+    description: |
+      3x3 game board state.
+
+      Represented as a flat tuple of cells with the zeroth index being
+      the top left of the board.
+    schema:
+      type: array
+      items:
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
+        - $ref: "#/types/cell"
