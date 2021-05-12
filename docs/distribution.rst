@@ -1,3 +1,6 @@
+
+.. _distribute:
+
 ##########################
 Distributing Specification
 ##########################

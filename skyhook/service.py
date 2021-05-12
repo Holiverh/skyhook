@@ -42,7 +42,6 @@ class Service:
                 function = Function(
                     name=function_specification["name"],
                     description=function_specification["description"],
-                    schema=type_specification["schema"],
                 )
                 service.declare_function(function)
                 for argument_specification \
@@ -111,10 +110,9 @@ class Type:
 
 class Function:
 
-    def __init__(self, *, name, description, schema):
+    def __init__(self, *, name, description):
         self.name = name
         self.description = description
-        self.schema = schema
         self._arguments = {}
         self.return_ = None
 
