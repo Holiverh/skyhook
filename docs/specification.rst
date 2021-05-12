@@ -46,6 +46,7 @@ by Skyhook's tooling so they should not be neglected.
     YAML supports multiline strings. Use them to add extra, paragraphed
     elaboration to the service description where appropriate.
 
+
 .. _markup:
 .. _names:
 
@@ -87,9 +88,18 @@ If markup must be used, stick to basic Markdown to ensure maximum
 legibility.
 
 
+.. _functions:
+
 *********
 Functions
 *********
+
+Functions define the capabilities of a service. The client of a service
+can call any specified function to instruct the service to perform a
+an operation. Arguments can be passed along with the function call to
+influence its behaviour. Often, on carrying out the requested operation
+the service will return a value (:ref:`or error <errors>`) back to the
+caller.
 
 .. code-block:: yaml
 
@@ -110,6 +120,117 @@ Functions
           schema:
             type: number
 
+Functions are listed under the correspondingly named ``functions``
+block. Each function must be :ref:`named and given a description
+<names>`. It is important to capture the exact intended behaviour of
+the function in its decription. It will guide the implementer towards
+the right implementation and help the user understand the capabilities
+of the service.
+
+Any number of arguments can be listed for the function. They too must
+be named and described. Most importantly, an argument specifies a
+schema which defines what an acceptable value for that argument looks
+like. This schema will be enforced by Skyhook  on both the caller and
+callee sides.
+
+Although the :ref:`full power of JSON schema <json-schema>` is available
+for use with an argument's schema, not all conceivable validation
+conditions can be expressed. This is most notably true for *service
+level validation* -- that is to say, when something is validated with
+respect to the service's own domain; such as an authorisation check.
+Reserve argument schema for *structual validation*. Although do include
+any other rules that may apply in the function description.
+
+Functions may optionally return a value. If included, the nature of
+the return value must be described and a schema specified which applies
+to the return value. Return value schemas are similarly enforced like
+that of arguments.
+
+
+.. _errors:
+
+Error Handling
+==============
+
+Skyhook reserves exceptions for signalling low-level errors when
+interacting with a service. Often this is communication level issues
+between the user and implementation such as might be caused by a
+lack of sufficient IAM permissions. Exceptions are similarly used to
+indicate service contract violations by either party.
+
+Despite this, it's often the case that the service itself has some
+notion of an *error*. For example, this could be made by a service
+user making a nonsense request such as attempting to deleted a resource
+managed by the service that doesn't exist. Or, sometimes in attempting
+to complete a valid operation an error is encountered with a connected
+system. Such as a database being unavailable due to outage or
+maintenance.
+
+To return *service level errors* to the caller, the service function
+must explicitly model this as part of its defined return value.
+One option to achieve this through the use of ``oneOf``:
+
+.. code-block:: yaml
+
+    returns:
+      description: Sum of the two numbers or an error if it cannot be computed.
+      schema:
+        oneOf:
+          - type: object
+            properties:
+              value: {type: integer}
+          - type: object
+            properties:
+              error: {const: true}
+
+An advantageous effect of doing this is that it can be used to force
+the caller to account for the possibility of an error to occur.
+Hopefully making the calling application more robust in its error
+handling in the process.
+
+.. code-block:: python
+
+    addition = calculator.add(5, 5)
+    if "error" not in addition:
+        assert addition["value"] == 10
+
+In the example above, a type checker would complain about any attempt
+to access ``value`` without first asserting that no error had occured.
+
+Communicating different *kinds of error* is left up to the the author
+of the service specification. One option is to introduce an enumeration
+of possible error codes -- either numeric or short identifier strings.
+
+.. code-block:: yaml
+
+    returns:
+      description: Sum of the two numbers or an error if it cannot be computed.
+      schema:
+        oneOf:
+          - type: object
+            properties:
+              value: {type: integer}
+          - type: object
+            properties:
+              error:
+                enum:
+                  - "NumberTooSmall"
+                  - "NumberTooBig"
+                  - "BusyDoingSomethingElse"
+                  - "DidntFeelLikeIt"
+
+When doing this, give consideration as to whether the caller can take
+any meaningful action in response to the specific error that can be
+returned. Otherwise risk creating a situation where error reporting
+descends into valueless noise.
+
+
+***************
+Re-using Schema
+***************
+
+
+.. _types:
 
 *****
 Types
@@ -128,6 +249,8 @@ Types
             y: {type: number}
             z: {type: number}
 
+
+.. _json-schema:
 
 ***********
 JSON Schema
