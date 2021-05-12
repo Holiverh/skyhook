@@ -9,6 +9,11 @@ that the service is to be *implemented*. Often there is a single
 implementation of a given service and it is this implementation that
 will be later used by clients of the service.
 
+
+*******
+Example
+*******
+
 Skyhook is for building simple, safe cloud based services. Specifically,
 services built on the "*simple*" AWS stack; namely: Lambda, Simple
 Notification Service (SNS) and Simple Queue Service (SQS).
@@ -70,10 +75,10 @@ the :mod:`calculator` package can be imported and the
     import calculator
     print(calculator.add)
 
-Attached to the function is a decorator which can be used to turn
-a suitable implementation of the *function specification* into a
-Lambda entry point that is both type-safe and has its inputs and
-outputs validated at runtime.
+Attached to the function is a decorator, a :class:`skyhook.function.Lambda`,
+which can be used to turn a suitable implementation of the *function
+specification* into a Lambda entry point that is both type-safe and has
+its inputs and outputs validated at runtime.
 
 .. code-block:: python
 
@@ -99,3 +104,18 @@ sugar. Through this decorator:
 
 - If type checking is in use, :func:`add_impl` would cause a type
   check error if it did not match the function specification.
+
+
+***************************
+Function Implementation API
+***************************
+
+.. autoclass:: skyhook.function.Lambda
+    :members:
+    :special-members: __call__
+    :undoc-members:
+
+
+***************************************
+Packaging and Deploying Implementations
+***************************************
