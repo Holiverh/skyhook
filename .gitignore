@@ -77,4 +77,5 @@ dmypy.json
 
 
 # Examples
+examples/calculator/calculator/
 examples/noughts-and-crosses/noughts_and_crosses/

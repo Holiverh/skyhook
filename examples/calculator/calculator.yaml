@@ -1,0 +1,21 @@
+service:
+  name: calculator
+  version: 0.1.0
+  description: An example service for basic arithmetic.
+
+functions:
+  - name: add
+    description: Add two numbers together.
+    arguments:
+      - name: a
+        description: Left addition operand.
+        schema:
+          type: integer
+      - name: b
+        description: Right addition operand.
+        schema:
+          type: integer
+    returns:
+      description: Sum of the two numbers.
+      schema:
+        type: integer
