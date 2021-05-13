@@ -69,7 +69,8 @@ class Package:
         module.import_typing()
         for type_ in self._service.types:
             name = _id_pascal(type_.name)
-            annotation, preamble = _annotate_schema(type_.schema, resolve)
+            annotation, preamble = _annotate_schema(
+                type_.schema, resolve, [type_.name])
             definition = ast.Assign(
                 targets=[ast.Name(id=name)],
                 value=annotation,
@@ -283,6 +284,7 @@ def _annotate_tuple(schema, resolve, names=()):
 
 
 def _annotate_schema(schema, resolve, names=()):
+    names = list(names)
     if "const" in schema:
         return _annotate_literal(schema["const"]), []
 
@@ -353,7 +355,7 @@ def _annotate_schema(schema, resolve, names=()):
 def _annotate_object(schema, resolve, names=()):
     # https://github.com/python/mypy/issues/7654
     names = list(names)
-    name = _case_pascal("-".join(names))
+    name = _id_pascal("-".join(names))
     name_object = f"_{name}Dict"
     name_required = f"_{name}Required"
     name_optional = f"_{name}Optional"
