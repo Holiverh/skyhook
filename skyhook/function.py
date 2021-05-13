@@ -88,7 +88,7 @@ class Lambda:
             event_schema["required"].append(argument.name)
         event_validator = self._service.validator(event_schema)
         try:
-            event_validator.validate()
+            event_validator.validate(event)
         except jsonschema.ValidationError as error:
             raise skyhook.error.ContractError from error
 
