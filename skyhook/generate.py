@@ -129,8 +129,8 @@ class Package:
             ))
             module.preamble.extend(preamble)
         if function.return_:
-            definition.returns, preamble = \
-                _annotate_schema(function.return_.schema, resolve)
+            definition.returns, preamble = _annotate_schema(
+                function.return_.schema, resolve, [function.name, "return"])
             module.preamble.extend(preamble)
         module.body.append(self._generate_function_lambda_ast(name, function))
 
