@@ -151,6 +151,8 @@ class Package:
         init = _Module()
         for module_name, module in modules:
             for name in module.names:
+                if name.startswith("_"):
+                    continue
                 import_ = ast.ImportFrom(
                     module=module_name,
                     names=[ast.alias(
