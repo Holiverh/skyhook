@@ -20,6 +20,7 @@ class Package:
         self._init = None
         self._types = None
         self._functions = None
+        self._messages = None
         self._specification_ast = ast.parse(textwrap.dedent(f"""\
         import skyhook.service
 
@@ -41,6 +42,7 @@ class Package:
             ("__init__.py", self._init.ast),
             ("_spec.py", self._specification_ast),
             ("functions.py", self._functions.ast),
+            ("messages.py", self._messages.ast),
             ("types.py", self._types.ast),
         ]
         for path, tree in files:
@@ -55,6 +57,7 @@ class Package:
     def _generate(self):
         self._generate_types()
         self._generate_functions()
+        self._generate_messages()
         self._generate_init()
 
     def _generate_types(self):
@@ -143,9 +146,27 @@ class Package:
         )
         return assign
 
+    def _generate_messages(self):
+        module = _Module()
+        module.import_typing()
+        module.import_types()
+        module.import_spec()
+        for message in self._service.messages:
+            name = _id_snake(message.name)
+            hook = (f"__import__('skyhook')"
+                    f".Messenger(_spec.service, '{message.name}')")
+            hook_ast = ast.parse(hook)
+            assign = ast.Assign(
+                targets=[ast.Name(id=name)],
+                value=hook_ast.body[0].value,
+            )
+            module.body.append(assign)
+        self._messages = module
+
     def _generate_init(self):
         modules = [
             ("functions", self._functions),
+            ("messages", self._messages),
             ("types", self._types),
         ]
         init = _Module()

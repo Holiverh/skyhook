@@ -77,13 +77,20 @@ class Hook:
 
     def __init__(self, module):
         self._functions = {}
+        self._channels = {}
         self._module = module
         self._service = __import__(
             f"{module.__name__}._spec", fromlist=[...]).service
 
     def define(self, name, *, arn):
         """Define implementation of service function by name."""
-        self._functions[name] = arn
+        arn_parsed = arnparse.arnparse(arn)
+        if arn_parsed.service in ["lambda"]:
+            self._functions[name] = arn
+        elif arn_parsed.service in ["sns", "sqs"]:
+            self._channels[name] = arn
+        else:
+            raise ValueError(f"cannot use '{arn_parsed.service}' in hook")
 
     def bind(self):
         """Make the hook ready for use.
@@ -163,3 +170,29 @@ class Hook:
         except jsonschema.ValidationError as error:
             raise TypeError("bad arguments") from error
         return arguments_dict
+
+    def send(self, name, message):
+        if name not in self._channels:
+            raise NotImplementedError(f"no implementation for '{name}'")
+        arn = self._channels[name]
+        arn_parsed = arnparse.arnparse(arn)
+        if arn_parsed.service == "sns":
+            session = boto3.Session(region_name=arn_parsed.region)
+            sns = session.client("sns")
+            sns.publish(
+                TopicArn=arn,
+                Message=json.dumps(message),
+            )
+        elif arn_parsed.service == "sqs":
+            session = boto3.Session(region_name=arn_parsed.region)
+            sqs = session.client("sqs")
+            sqs_queue_url = sqs.get_queue_url(
+                QueueName=arn_parsed.resource,
+                QueueOwnerAWSAccountId=arn_parsed.account_id,
+            )["QueueUrl"]
+            sqs.send_message(
+                QueueUrl=sqs_queue_url,
+                MessageBody=json.dumps(message),
+            )
+        else:
+            raise NotImplementedError

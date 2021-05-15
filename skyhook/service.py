@@ -17,6 +17,7 @@ class Service:
         self.version = version
         self.description = description
         self._functions = {}
+        self._messages = {}
         self._types = {}
 
     def __repr__(self):
@@ -56,6 +57,13 @@ class Service:
                         description=function_specification["returns"]["description"],
                         schema=function_specification["returns"]["schema"],
                     )
+        if "messages" in specification:
+            for message_specification in specification["messages"]:
+                service.declare_message(Message(
+                    name=message_specification["name"],
+                    description=message_specification["description"],
+                    schema=message_specification["schema"],
+                ))
         return service
 
     @classmethod
@@ -71,6 +79,10 @@ class Service:
     @property
     def functions(self):
         yield from self._functions.values()
+
+    @property
+    def messages(self):
+        yield from self._messages.values()
 
     def validator(self, schema):
         return jsonschema.Draft7Validator(
@@ -89,6 +101,11 @@ class Service:
             raise ValueError(f"function '{function.name}' already declared ")
         self._functions[function.name] = function
 
+    def declare_message(self, message):
+        if message.name in self._messages:
+            raise ValueError(f"message '{message.name}' already declared")
+        self._messages[message.name] = message
+
     def type(self, name):
         if name not in self._types:
             raise ValueError(f"no type '{name}' declared'")
@@ -98,6 +115,11 @@ class Service:
         if name not in self._functions:
             raise ValueError(f"no function '{name}' declared")
         return self._functions[name]
+
+    def message(self, name):
+        if name not in self._messages:
+            raise ValueError(f"no message '{name}' declared")
+        return self._messages[name]
 
 
 class Type:
@@ -149,6 +171,14 @@ class Argument:
 class Return:
 
     def __init__(self, *, description, schema):
+        self.description = description
+        self.schema = schema
+
+
+class Message:
+
+    def __init__(self, *, name, description, schema):
+        self.name = name
         self.description = description
         self.schema = schema
 
