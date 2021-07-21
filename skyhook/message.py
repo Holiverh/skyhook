@@ -37,9 +37,9 @@ class MessengerLambda:
 
     def __call__(self, callable_):
         """See :meth:`wrap`."""
-        return self.wraps(callable_)
+        return self.wrap(callable_)
 
-    def wraps(self, callable_, batched=False):
+    def wrap(self, callable_, *, batched=False):
         """Wrap message handler into Lambda entry-point.
 
         Takes a callable which accepts a service message and turns
@@ -96,6 +96,8 @@ class MessengerLambda:
                 self._messages_from_sns(event)
                 + self._messages_from_sqs(event)
             )
+            if not messages:
+                raise skyhook.error.ContractError
             if batched:
                 callable_(messages)
             else:
@@ -106,7 +108,7 @@ class MessengerLambda:
 
     def batched(self, callable_):
         """See :meth:`wrap`."""
-        return self.wraps(callable_, batched=True)
+        return self.wrap(callable_, batched=True)
 
     def _messages_from_sns(self, event):
         messages = []
