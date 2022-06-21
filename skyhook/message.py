@@ -10,11 +10,13 @@ import skyhook.hook
 
 
 class Messenger:
+    """For sending and receiving messages."""
 
     def __init__(self, service, name):
         self._service = service
         self._message = service.message(name)
-        self.lambda_ = MessengerLambda(self)
+        #: For creating message receivers using Lambda.
+        self.lambda_: MessengerLambda = MessengerLambda(self)
 
     def validate(self, message):
         validator = self._service.validator(self._message.schema)

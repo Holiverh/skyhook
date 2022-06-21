@@ -225,9 +225,61 @@ returned. Otherwise risk creating a situation where error reporting
 descends into valueless noise.
 
 
-***************
-Re-using Schema
-***************
+.. _messages:
+
+********
+Messages
+********
+
+In addition to :ref:`functions <functions>`, services may also define
+message buses. Where functions are useful for defining imperative or
+procedural interfaces, messages allow for event-driven or message-actor
+service designs.
+
+.. code:: yaml
+
+  messages:
+    - name: alerts
+      description: Notification about state of the system.
+      schema:
+        type: object
+        properties:
+          message: {type: string}
+          level:
+            enum:
+              - debug
+              - info
+              - error
+
+.. tip::
+
+  Strongly consider using a ``$ref`` to a :ref:`separately defined type
+  <types>` for use as the message ``schema``. As this will almost always
+  produce prettier type annotations due to the fact that types can be
+  explicitly named.
+
+Messages are listed under a top-level ``messages`` block within the
+service definition. Each message must be :ref:`named and described
+<names>`. It's important to explain the purpose of these messages
+within the service, highlighting any actions that will take place upon
+their receipt.
+
+Simpler than functions, messages just have a single ``schema`` which
+describes the structure of the messages themselves. Typically the
+schema will be a ``type: object`` but scalar types are also acceptable.
+
+Service designers are free to use both functions and messages in a
+single service definition as they see fit. Generally messages should
+be reserved for fire-and-forget use cases, where the *caller* /
+*publisher* does not necessarily need to confirm that the message was
+actually received and processed. However, consideration should be given
+to the message durability characteristics of the underlying AWS services
+that are used to implement the Skyhook service. Namely SNS or SQS.
+
+Messages may also be the preferable choice where there is a desire to
+more strongly de-couple the sender and receiver. For example, in cases
+where messages need to be broadcast to multiple receivers which the
+sender cannot know about ahead of time.
 
 
 .. _types:
@@ -235,6 +287,16 @@ Re-using Schema
 *****
 Types
 *****
+
+Rather than merely pushing around primitive data, services often
+prefer to reason about their interfaces in terms of their own higher
+level data or domain model. Where there may be common types of objects
+which are used with various functions and messages but themselves are
+made up of multiple fields.
+
+It's not a great leap in logic to imagine extending the earlier example
+calculator service to higher dimensions. Allowing it to perform basic
+operations on vectors ...
 
 .. code-block:: yaml
 
@@ -248,6 +310,60 @@ Types
             x: {type: number}
             y: {type: number}
             z: {type: number}
+
+By declaring a ``vector3`` type, functions (and messages) can refer
+to this type by name ...
+
+.. code-block:: yaml
+
+    functions:
+      - name: add
+        description: Add two vectors together.
+        arguments:
+          - name: a
+            description: Left addition operand.
+            schema: {$ref: "./types/vector3"}
+          - name: b
+            description: Right addition operand.
+            schema: {$ref: "#/types/vector3"}
+        returns:
+          description: Sum of the two vectors.
+          schema: {$ref: "#/types/vector3"}
+
+An obvious benefit to this is that, despite being used three times
+in just a single function, the vector schema needn't be repeated.
+However, going beyond simple de-duplication: the Skyhook code generator
+will export aliases for the generated types. Making it possible to
+write overall cleaner and more concise code for both the service
+implementer and user. For example:
+
+.. code-block:: python
+
+  from calculator.functions import add
+  from calculator.types import Vector3
+
+  @add.lambda_
+  def add_impl(a: Vector3, b: Vector3) -> Vector3: ...
+
+All types are defined under the ``types`` block and as with functions
+and messagers, they require :ref:`names and descriptions <names>`.
+Beyond this, only a ``schema`` is required.
+
+To reference a type, a regular JSON Schema reference can be used,
+where the fragment is the ``name`` of the type preceeded by ``/types/``.
+As these are regular JSON Schema references, the type definition itself
+needn't necessarily exist in the same file as the function or message
+definitions that make use of it.
+
+References to types can occur anywhere inside of a ``schema``. Including
+inside the ``schema`` for another type definition.
+
+.. note::
+
+  Note that new types needn't be introduced merely for the sake of
+  avoiding repetitive schemas. :ref:`Schemas can be re-used directly
+  <json-schema-reuse>` as an alternative. Types should be added for
+  representing distinct parts of the service's data/domain model.
 
 
 .. _json-schema:
@@ -276,3 +392,46 @@ follow any issues should be few and far between.
 Do bare in mind, even if generated type definitions are weaker than
 ideal (or perhaps type checking is disabled), the schema will still be
 used for validating data passing through the service.
+
+
+.. _json-schema-reuse:
+
+Re-using Schema
+===============
+
+If similar passages of JSON Schema are repeated throughout the service
+definition it may be wise to simply define the passage once and re-use
+it multiple times.
+
+Re-usable schema excerpts can be placed under a top-level ``schemas``
+block and referenced else where using regular JSON Schema ``$ref``
+references. Note that schemas have an ID but are *not* :ref:`named
+elements <names>` within the service definition. They exist purely
+for transclusive purposes and this is a key difference when compared
+to :ref:`service defined types <types>`.
+
+.. code-block:: yaml
+
+  functions:
+    - name: buy
+      description: Buy a unicorn of a given colour.
+      arguments:
+        - name: colour
+          description: Colour of the unicorn to buy.
+          schema: {$ref: "#/schemas/UnicornColour"}
+
+  messages:
+    - name: sales
+      description: Notification of unicorn sales.
+      schema:
+        type: object
+        properties:
+          quantity: {type: integer}
+          colour: {$ref: "#/schemas/UnicornColour"}
+
+  schemas:
+    UnicornColour:
+      enum: [red, yellow, pink, blue]
+
+As with type references, schema can be referenced from other files;
+as with any JSON Schema reference.

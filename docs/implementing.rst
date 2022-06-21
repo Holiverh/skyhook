@@ -13,9 +13,11 @@ implementation of a given service and it is this implementation that
 will be later used by clients of the service.
 
 
-*******
-Example
-*******
+.. _implement-lambda:
+
+******************************************
+Example: Implementing Functions as Lambdas
+******************************************
 
 Skyhook is for building simple, safe cloud based services. Specifically,
 services built on the "*simple*" AWS stack; namely: Lambda, Simple

@@ -9,16 +9,17 @@
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+
+import os
+import sys
+sys.path.insert(0, os.path.abspath('../examples/calculator/'))
+sys.path.insert(0, os.path.abspath('../examples/noughts-and-crosses/'))
 
 
 # -- Project information -----------------------------------------------------
 
 project = 'Skyhook'
-copyright = '2021, Oliver Ainsworth'
+copyright = '2021-2022, Oliver Ainsworth'
 author = 'Oliver Ainsworth'
 
 
@@ -51,3 +52,21 @@ html_theme = 'furo'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+html_title = project
+html_theme_options = {
+    'announcement': 'Skyhook is experimental software subject to change.',
+}
+
+
+# Module name hacks so that aliases work correctly in autodoc
+import skyhook
+import skyhook.error
+import skyhook.function
+import skyhook.hook
+
+skyhook.error.AccessError.__module__ = skyhook.__name__
+skyhook.error.ContractError.__module__ = skyhook.__name__
+skyhook.error.TransportError.__module__ = skyhook.__name__
+skyhook.function.Lambda.__module__ = skyhook.__name__
+skyhook.hook.Hook.__module__ = skyhook.__name__
